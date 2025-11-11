@@ -9,6 +9,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.studentmanageapp.ui.navigation.Screen
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun MainScreen(navController: NavHostController) {
@@ -21,11 +23,29 @@ fun MainScreen(navController: NavHostController) {
     ) {
         Text("기능 선택", style = MaterialTheme.typography.titleLarge)
 
-        FeatureButton("학생 명단") { navController.navigate(Screen.StudentList.route) }
-        FeatureButton("출석 체크") { navController.navigate(Screen.Attendance.route) }
-        FeatureButton("과제 입력") { navController.navigate(Screen.Homework.route) }
-        FeatureButton("참여 확인") { navController.navigate(Screen.Activity.route) }
-        FeatureButton("칭찬/발표") { navController.navigate(Screen.Praise.route) }
+        FeatureButton("학생 명단") {
+            navController.navigate(Screen.StudentList.route)
+        }
+
+        FeatureButton("출석") {
+            val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+            navController.navigate(Screen.Attendance.routeWithDate(today))
+        }
+
+        FeatureButton("칭찬/발표") {
+            navController.navigate(Screen.Praise.route)
+        }
+
+        FeatureButton("과제") {
+            navController.navigate(Screen.Homework.route)
+        }
+
+        FeatureButton("확인") {
+            navController.navigate(Screen.Activity.route)
+        }
+
+        // ❌ 과목 수정 제거
+        // ❌ 설정 제거
     }
 }
 
@@ -34,14 +54,14 @@ fun FeatureButton(label: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth(0.92f) // 양쪽 여백 살짝 남기고 거의 꽉 채움
-            .height(70.dp) // 세로 길이 살짝 늘림
+            .fillMaxWidth(0.92f)
+            .height(70.dp)
             .padding(horizontal = 4.dp)
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            fontSize = 20.sp // 텍스트도 살짝 키움
+            fontSize = 20.sp
         )
     }
 }

@@ -9,12 +9,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.studentmanageapp.ui.navigation.NavigationGraph
 import com.example.studentmanageapp.ui.component.BottomNavigationBar
+import com.example.studentmanageapp.ui.navigation.Screen
 import com.example.studentmanageapp.ui.theme.StudentManageAppTheme
 import com.example.studentmanageapp.viewmodel.StudentViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : ComponentActivity() {

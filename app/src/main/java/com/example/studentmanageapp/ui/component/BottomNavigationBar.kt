@@ -5,52 +5,71 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.studentmanageapp.ui.navigation.Screen
-import androidx.compose.ui.graphics.Color
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
         Screen.StudentList,
         Screen.Attendance,
+        Screen.Praise,
         Screen.Homework,
         Screen.Activity,
-        Screen.Praise,
+
         Screen.Options
     )
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val navBackStackEntry = navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry.value?.destination?.route
 
     NavigationBar(
-        containerColor = MaterialTheme.colorScheme.secondary // 연한 연두색 배경
+        containerColor = MaterialTheme.colorScheme.secondary
     ) {
         items.forEach { screen ->
             NavigationBarItem(
-                selected = currentRoute == screen.route,
+                selected = when (screen) {
+                    Screen.Attendance -> currentRoute?.startsWith(Screen.Attendance.route) == true
+                    else -> currentRoute == screen.route
+                },
                 onClick = {
-                    navController.navigate(screen.route) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
+                    val targetRoute = if (screen == Screen.Attendance) {
+                        val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        Screen.Attendance.routeWithDate(today)
+                    } else {
+                        screen.route
+                    }
+
+                    if (currentRoute != targetRoute) {
+                        navController.navigate(targetRoute) {
+                            when {
+                                screen == Screen.Options -> {
+                                    // ✅ 옵션 화면은 항상 초기화
+                                    popUpTo(Screen.Main.route) { inclusive = false }
+                                }
+                                screen == Screen.Attendance && currentRoute == Screen.Check.route -> {
+                                    // ✅ CheckScreen에서 출석 누르면 CheckScreen 제거
+                                    popUpTo(Screen.Check.route) { inclusive = true }
+                                }
+                                else -> {
+                                    // ✅ 다른 화면은 상태 복원
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    restoreState = true
+                                }
+                            }
+                            launchSingleTop = true
+                        }
                     }
                 },
                 icon = {
                     Icon(
                         imageVector = screen.icon,
-                        contentDescription = screen.label,
-                        tint = if (currentRoute == screen.route)
-                            MaterialTheme.colorScheme.primary // 선택된 아이콘: 연두 포인트
-                        else
-                            MaterialTheme.colorScheme.onSecondary // 선택 안됨: 대비 텍스트
+                        contentDescription = screen.label
                     )
                 },
                 label = {
                     Text(
                         text = screen.label,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (currentRoute == screen.route)
-                            MaterialTheme.colorScheme.primary
-
-                        else
-                            MaterialTheme.colorScheme.onSecondary
+                        style = MaterialTheme.typography.labelLarge
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
@@ -58,7 +77,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                     unselectedIconColor = MaterialTheme.colorScheme.onSecondary,
                     selectedTextColor = MaterialTheme.colorScheme.primary,
                     unselectedTextColor = MaterialTheme.colorScheme.onSecondary,
-                    indicatorColor = MaterialTheme.colorScheme.tertiary // 선택된 배경 강조
+                    indicatorColor = MaterialTheme.colorScheme.tertiary
                 )
             )
         }
