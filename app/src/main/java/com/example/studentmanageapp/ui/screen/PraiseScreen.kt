@@ -46,7 +46,11 @@ fun PraiseScreen(viewModel: StudentViewModel) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("칭찬/발표", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            Text(
+                "칭찬/발표",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f)
+            )
 
             IconButton(onClick = {
                 dialogAction = "minus"
@@ -55,6 +59,7 @@ fun PraiseScreen(viewModel: StudentViewModel) {
             }) {
                 Icon(Icons.Default.Remove, contentDescription = "다중 점수 감소")
             }
+
             IconButton(onClick = {
                 dialogAction = "plus"
                 selectedStudents.clear()
@@ -63,116 +68,89 @@ fun PraiseScreen(viewModel: StudentViewModel) {
                 Icon(Icons.Default.Add, contentDescription = "다중 점수 증가")
             }
 
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(studentList.sortedBy { it.id }) { student ->
+                    val score = scoreMap[student.id] ?: 0
+                    val scoreColor = if (score >= 0) Color.Blue else Color.Red
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(studentList.sortedBy { it.id }) { student ->
-                val score = scoreMap[student.id] ?: 0
-                val scoreColor = if (score >= 0) Color.Blue else Color.Red
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp)
-                ) {
-                    Text(
-                        "${student.id}",
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 4.dp), // ✅ 왼쪽 여백 추가
-                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
-                        textAlign = TextAlign.Start // ✅ 왼쪽 정렬
-                    )
-                    Text(
-                        student.name,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 4.dp),
-                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
-                        textAlign = TextAlign.Start
-                    )
-                    Text(
-                        "$score",
-                        modifier = Modifier.weight(1f),
-                        color = scoreColor,
-                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
-                        textAlign = TextAlign.Center
-                    )
                     Row(
-                        modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp) // ✅ 버튼 간 간격 넓힘
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
                     ) {
-                        IconButton(
-                            onClick = { scoreMap[student.id] = score - 1 },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(Icons.Default.Remove, contentDescription = "점수 감소")
-                        }
-
-                        IconButton(
-                            onClick = { scoreMap[student.id] = score + 1 },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "점수 증가")
-                        }
+                        Text(
+                            "${student.id}",
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 4.dp),
+                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
+                            textAlign = TextAlign.Start
+                        )
+                        Text(
+                            student.name,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 4.dp),
+                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 20.sp),
+                            textAlign = TextAlign.Start
+                        )
                     }
                 }
             }
-        }
 
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val delta = if (dialogAction == "plus") 1 else -1
-                        selectedStudents.forEach { studentId ->
-                            val current = scoreMap[studentId] ?: 0
-                            val newScore = current + delta
-                            scoreMap[studentId] = newScore
-                            val student = studentList.find { it.id == studentId }
-                            if (student != null) {
-                                viewModel.updateStudent(student.copy(praiseScore = newScore))
+            if (showDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDialog = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val delta = if (dialogAction == "plus") 1 else -1
+                            selectedStudents.forEach { studentId ->
+                                val current = scoreMap[studentId] ?: 0
+                                val newScore = current + delta
+                                scoreMap[studentId] = newScore
+                                val student = studentList.find { it.id == studentId }
+                                if (student != null) {
+                                    viewModel.updateStudent(student.copy(praiseScore = newScore))
+                                }
+                            }
+                            showDialog = false
+                        }) {
+                            Text("확인")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDialog = false }) {
+                            Text("취소")
+                        }
+                    },
+                    title = {
+                        Text(if (dialogAction == "plus") "학생 선택 후 +1 적용" else "학생 선택 후 -1 적용")
+                    },
+                    text = {
+                        val scrollState = rememberScrollState()
+                        Column(modifier = Modifier.verticalScroll(scrollState)) {
+                            studentList.sortedBy { it.id }.forEach { student ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(
+                                        checked = selectedStudents.contains(student.id),
+                                        onCheckedChange = { checked ->
+                                            if (checked) selectedStudents.add(student.id)
+                                            else selectedStudents.remove(student.id)
+                                        }
+                                    )
+                                    Text("${student.id}. ${student.name}")
+                                }
                             }
                         }
-                        showDialog = false
-                    }) {
-                        Text("확인")
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDialog = false }) {
-                        Text("취소")
-                    }
-                },
-                title = {
-                    Text(if (dialogAction == "plus") "학생 선택 후 +1 적용" else "학생 선택 후 -1 적용")
-                },
-                text = {
-                    val scrollState = rememberScrollState()
-                    Column(modifier = Modifier.verticalScroll(scrollState)) {
-                        studentList.sortedBy { it.id }.forEach { student ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(
-                                    checked = selectedStudents.contains(student.id),
-                                    onCheckedChange = { checked ->
-                                        if (checked) selectedStudents.add(student.id)
-                                        else selectedStudents.remove(student.id)
-                                    }
-                                )
-                                Text("${student.id}. ${student.name}")
-                            }
-                        }
-                    }
-                }
-            )
+                )
+            }
         }
     }
 }

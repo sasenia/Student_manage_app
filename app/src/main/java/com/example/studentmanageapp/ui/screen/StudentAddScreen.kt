@@ -1,11 +1,9 @@
 package com.example.studentmanageapp.ui.screen
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -17,11 +15,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.studentmanageapp.data.entity.Student
 import com.example.studentmanageapp.viewmodel.StudentViewModel
-
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.LayoutDirection
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +38,6 @@ fun StudentEditScreen(
 
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-
 
     Scaffold(
         topBar = {
@@ -70,10 +67,8 @@ fun StudentEditScreen(
                     start = padding.calculateStartPadding(LayoutDirection.Ltr),
                     end = padding.calculateEndPadding(LayoutDirection.Ltr),
                     top = padding.calculateTopPadding()
-                    // ✅ bottom padding 제거
                 )
         ) {
-            // ⬇️ 이하 기존 코드 그대로 유지
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,6 +158,7 @@ fun StudentEditScreen(
                 }
             }
 
+
             Divider()
 
             Column(
@@ -191,6 +187,8 @@ fun StudentEditScreen(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(12.dp)) // 원격의 Spacer 반영 (선택사항)
             }
         }
 
@@ -234,8 +232,6 @@ fun StudentEditScreen(
         }
     }
 }
-
-
 
 @Composable
 fun StudentItemRow(
