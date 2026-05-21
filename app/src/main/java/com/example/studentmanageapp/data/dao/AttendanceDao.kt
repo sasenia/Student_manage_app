@@ -1,6 +1,9 @@
 package com.example.studentmanageapp.data.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import com.example.studentmanageapp.model.AttendanceRecord
 import java.time.LocalDate
 
@@ -30,4 +33,9 @@ interface AttendanceDao {
 
     @Query("DELETE FROM attendance_records WHERE studentId = :studentId AND date = :date")
     suspend fun deleteRecord(studentId: Int, date: LocalDate)
+
+    @Query("DELETE FROM attendance_records WHERE date = :date")
+    suspend fun deleteAttendanceByDate(date: LocalDate)
+
+
 }

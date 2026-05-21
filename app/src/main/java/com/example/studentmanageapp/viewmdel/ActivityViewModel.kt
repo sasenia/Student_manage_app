@@ -2,8 +2,8 @@ package com.example.studentmanageapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.studentmanageapp.data.repository.ActivityRepository
 import com.example.studentmanageapp.data.entity.Activity
+import com.example.studentmanageapp.data.repository.ActivityRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -25,4 +25,5 @@ class ActivityViewModel(private val repository: ActivityRepository) : ViewModel(
             repository.deleteActivities(names)
         }
     }
+
 }

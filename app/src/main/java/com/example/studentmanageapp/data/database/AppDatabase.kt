@@ -5,20 +5,20 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.example.studentmanageapp.data.dao.StudentDao
-import com.example.studentmanageapp.data.dao.AttendanceDao
-import com.example.studentmanageapp.data.dao.SubjectDao
+import com.example.studentmanageapp.data.converter.LocalDateConverter
 import com.example.studentmanageapp.data.dao.ActivityDao
+import com.example.studentmanageapp.data.dao.AttendanceDao
+import com.example.studentmanageapp.data.dao.StudentDao
+import com.example.studentmanageapp.data.dao.SubjectDao
+import com.example.studentmanageapp.data.entity.Activity
 import com.example.studentmanageapp.data.entity.Student
 import com.example.studentmanageapp.data.entity.Subject
-import com.example.studentmanageapp.data.entity.Activity
 import com.example.studentmanageapp.model.AttendanceRecord
 import com.example.studentmanageapp.model.AttendanceStatusConverter
-import com.example.studentmanageapp.data.converter.LocalDateConverter
 
 @Database(
     entities = [Student::class, AttendanceRecord::class, Subject::class, Activity::class], // ✅ Activity 추가
-    version = 9, // ✅ 버전 증가
+    version = 10, // ✅ 버전 증가
     exportSchema = false
 )
 @TypeConverters(AttendanceStatusConverter::class, LocalDateConverter::class)

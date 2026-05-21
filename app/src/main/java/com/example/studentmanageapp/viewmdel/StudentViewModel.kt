@@ -1,6 +1,9 @@
 package com.example.studentmanageapp.viewmodel
 
 import android.app.Application
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.studentmanageapp.data.database.AppDatabase
@@ -8,11 +11,13 @@ import com.example.studentmanageapp.data.entity.Student
 import com.example.studentmanageapp.data.repository.StudentRepository
 import com.example.studentmanageapp.model.AttendanceRecord
 import com.example.studentmanageapp.model.AttendanceStatus
+import com.example.studentmanageapp.network.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
+
 
 class StudentViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -115,4 +120,42 @@ class StudentViewModel(application: Application) : AndroidViewModel(application)
         val filtered = records.filter { it.status != AttendanceStatus.PRESENT }
         onResult(filtered)
     }
+
+    fun deleteAttendanceByDate(date: LocalDate, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            attendanceDao.deleteAttendanceByDate(date)
+            onDone()
+        }
+    }
+
+    var lastUpdatedStudentId by mutableStateOf<Int?>(null)
+        private set
+
+    fun markStudentUpdated(studentId: Int) {
+        lastUpdatedStudentId = studentId
+    }
+
+    fun clearLastUpdated() {
+        lastUpdatedStudentId = null
+    }
+
+    private val _serverStudents = MutableStateFlow<List<String>>(emptyList())
+    val serverStudents: StateFlow<List<String>> = _serverStudents
+
+    private val _serverMessage = MutableStateFlow("Server not called yet")
+    val serverMessage: StateFlow<String> = _serverMessage
+
+    fun loadStudentsFromServer() = viewModelScope.launch {
+        _serverMessage.value = "Loading..."
+
+        try {
+            val students = RetrofitClient.studentApi.getStudents()
+            _serverStudents.value = students
+            _serverMessage.value = "Success: ${students.size} students"
+        } catch (e: Exception) {
+            _serverStudents.value = emptyList()
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+        }
+    }
+
 }

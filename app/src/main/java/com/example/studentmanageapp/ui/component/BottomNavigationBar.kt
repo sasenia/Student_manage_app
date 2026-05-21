@@ -1,7 +1,13 @@
 package com.example.studentmanageapp.ui.component
 
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.studentmanageapp.ui.navigation.Screen
@@ -16,9 +22,9 @@ fun BottomNavigationBar(navController: NavHostController) {
         Screen.Praise,
         Screen.Homework,
         Screen.Activity,
-
         Screen.Options
     )
+
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
 
@@ -43,15 +49,12 @@ fun BottomNavigationBar(navController: NavHostController) {
                         navController.navigate(targetRoute) {
                             when {
                                 screen == Screen.Options -> {
-                                    // ✅ 옵션 화면은 항상 초기화
                                     popUpTo(Screen.Main.route) { inclusive = false }
                                 }
                                 screen == Screen.Attendance && currentRoute == Screen.Check.route -> {
-                                    // ✅ CheckScreen에서 출석 누르면 CheckScreen 제거
                                     popUpTo(Screen.Check.route) { inclusive = true }
                                 }
                                 else -> {
-                                    // ✅ 다른 화면은 상태 복원
                                     popUpTo(navController.graph.startDestinationId) { saveState = true }
                                     restoreState = true
                                 }
@@ -69,7 +72,9 @@ fun BottomNavigationBar(navController: NavHostController) {
                 label = {
                     Text(
                         text = screen.label,
-                        style = MaterialTheme.typography.labelLarge
+                        maxLines = 1,                 // ✅ 1줄 고정
+                        overflow = TextOverflow.Ellipsis, // ✅ 길면 … 처리
+                        style = MaterialTheme.typography.labelSmall // ✅ 글자 크기 낮춤(겹침 방지)
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(

@@ -3,10 +3,10 @@ package com.example.studentmanageapp.data.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
+import com.example.studentmanageapp.data.converter.MapConverter
+import com.example.studentmanageapp.data.converter.NestedMapConverter
 import com.example.studentmanageapp.model.AttendanceStatus
 import com.example.studentmanageapp.model.AttendanceStatusConverter
-import com.example.studentmanageapp.data.converter.MapConverter
-import com.example.studentmanageapp.data.converter.NestedMapConverter // ✅ 추가
 
 @Entity(tableName = "students")
 @TypeConverters(
@@ -31,5 +31,6 @@ data class Student(
 
     val praise: String = "",
     val activityMap: Map<String, String> = emptyMap(),
-    val praiseScore: Int = 0
+    val praiseScore: Int = 0,
+    val presentationScore: Int = 0
 )

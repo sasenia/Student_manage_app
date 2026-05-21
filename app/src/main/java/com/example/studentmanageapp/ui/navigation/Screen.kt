@@ -1,7 +1,16 @@
 package com.example.studentmanageapp.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(
@@ -18,7 +27,13 @@ sealed class Screen(
 
     object Homework : Screen("homeworkScreen", "과제", Icons.Default.Edit)
     object Activity : Screen("activityScreen", "확인", Icons.Default.Star)
-    object Praise : Screen("praiseScreen", "칭찬발표", Icons.Default.Favorite)
+    object Praise : Screen("praiseScreen", "칭찬", Icons.Default.Favorite)
+    object Presentation : Screen(
+        route = "presentationScreen",
+        label = "발표",
+        icon = Icons.Default.Mic
+    )
+
     object Options : Screen("optionsScreen", "설정", Icons.Default.Settings)
     object Check : Screen("checkScreen", "출석확인", Icons.Default.DateRange)
     object Calendar : Screen("calendarScreen", "달력", Icons.Default.DateRange)

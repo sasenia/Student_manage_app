@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.sp
 import com.example.studentmanageapp.viewmodel.StudentViewModel
 
 @Composable
-fun PraiseScreen(viewModel: StudentViewModel) {
+fun PresentationScreen(
+    viewModel: StudentViewModel
+) {
     val studentList by viewModel.studentList.collectAsState()
     val scoreMap = remember { mutableStateMapOf<Int, Int>() }
 
@@ -50,7 +52,7 @@ fun PraiseScreen(viewModel: StudentViewModel) {
 
     LaunchedEffect(studentList) {
         studentList.forEach { student ->
-            scoreMap[student.id] = student.praiseScore
+            scoreMap[student.id] = student.presentationScore
         }
     }
 
@@ -66,7 +68,7 @@ fun PraiseScreen(viewModel: StudentViewModel) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("칭찬", style = MaterialTheme.typography.titleLarge)
+            Text("발표", style = MaterialTheme.typography.titleLarge)
 
             Row {
                 IconButton(onClick = {
@@ -134,7 +136,7 @@ fun PraiseScreen(viewModel: StudentViewModel) {
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    // ⭐ 점수 영역 (- 0 +) 하나로 묶기
+                    // ⭐ 점수 영역 (- 0 +)
                     Row(
                         modifier = Modifier.weight(1.8f),
                         verticalAlignment = Alignment.CenterVertically,
@@ -148,8 +150,9 @@ fun PraiseScreen(viewModel: StudentViewModel) {
                                 val newScore = score - 1
                                 scoreMap[student.id] = newScore
                                 viewModel.updateStudent(
-                                    student.copy(praiseScore = newScore)
+                                    student.copy(presentationScore = newScore)
                                 )
+
                             },
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -157,6 +160,7 @@ fun PraiseScreen(viewModel: StudentViewModel) {
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
+
                         // 점수
                         Text(
                             text = score.toString(),
@@ -167,13 +171,14 @@ fun PraiseScreen(viewModel: StudentViewModel) {
                         )
 
                         Spacer(modifier = Modifier.width(8.dp))
+
                         // 증가
                         IconButton(
                             onClick = {
                                 val newScore = score + 1
                                 scoreMap[student.id] = newScore
                                 viewModel.updateStudent(
-                                    student.copy(praiseScore = newScore)
+                                    student.copy(presentationScore = newScore)
                                 )
                             },
                             modifier = Modifier.size(28.dp)
@@ -226,7 +231,7 @@ fun PraiseScreen(viewModel: StudentViewModel) {
                         scoreMap[id] = newScore
                         studentList.find { it.id == id }?.let {
                             viewModel.updateStudent(
-                                it.copy(praiseScore = newScore)
+                                it.copy(presentationScore = newScore)
                             )
                         }
                     }
