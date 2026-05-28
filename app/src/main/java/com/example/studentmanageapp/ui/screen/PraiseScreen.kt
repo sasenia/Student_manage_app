@@ -147,9 +147,7 @@ fun PraiseScreen(viewModel: StudentViewModel) {
 
                                 val newScore = score - 1
                                 scoreMap[student.id] = newScore
-                                viewModel.updateStudent(
-                                    student.copy(praiseScore = newScore)
-                                )
+                                viewModel.savePraise(student.id, -1)
                             },
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -172,9 +170,7 @@ fun PraiseScreen(viewModel: StudentViewModel) {
                             onClick = {
                                 val newScore = score + 1
                                 scoreMap[student.id] = newScore
-                                viewModel.updateStudent(
-                                    student.copy(praiseScore = newScore)
-                                )
+                                viewModel.savePraise(student.id, 1)
                             },
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -224,11 +220,7 @@ fun PraiseScreen(viewModel: StudentViewModel) {
                         val current = scoreMap[id] ?: 0
                         val newScore = current + delta
                         scoreMap[id] = newScore
-                        studentList.find { it.id == id }?.let {
-                            viewModel.updateStudent(
-                                it.copy(praiseScore = newScore)
-                            )
-                        }
+                        viewModel.savePraise(id, delta)
                     }
                     showDialog = false
                 }) {

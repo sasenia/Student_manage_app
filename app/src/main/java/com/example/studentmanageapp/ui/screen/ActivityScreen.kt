@@ -230,8 +230,11 @@ fun ActivityScreen(
                                             levelExpanded = false
                                             val updated = student.activityMap.toMutableMap()
                                             updated[key] = level
-                                            studentViewModel.updateStudent(
-                                                student.copy(activityMap = updated)
+                                            studentViewModel.saveActivity(
+                                                student.id,
+                                                selectedActivity.name,
+                                                level,
+                                                currentDate.toString()
                                             )
                                             studentViewModel.markStudentUpdated(student.id)
                                         },

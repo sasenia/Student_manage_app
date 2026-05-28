@@ -10,8 +10,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -27,9 +25,6 @@ fun MainScreen(
     navController: NavHostController,
     viewModel: StudentViewModel
 ) {
-    val serverStudents by viewModel.serverStudents.collectAsState()
-    val serverMessage by viewModel.serverMessage.collectAsState()
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -38,19 +33,6 @@ fun MainScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("기능 선택", style = MaterialTheme.typography.titleLarge)
-
-        FeatureButton("서버 학생 불러오기") {
-            viewModel.loadStudentsFromServer()
-        }
-
-        Text(serverMessage, style = MaterialTheme.typography.bodyMedium)
-
-        if (serverStudents.isNotEmpty()) {
-            Text(
-                text = serverStudents.joinToString(", "),
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
 
         FeatureButton("학생 명단") {
             navController.navigate(Screen.StudentList.route)

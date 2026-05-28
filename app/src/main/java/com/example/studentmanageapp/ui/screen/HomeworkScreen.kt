@@ -232,8 +232,11 @@ fun HomeworkScreen(
                                             dateMap[dateKey] = level
                                             updated[subjectName] = dateMap
 
-                                            studentViewModel.updateStudent(
-                                                student.copy(homeworkMap = updated)
+                                            studentViewModel.saveHomework(
+                                                student.id,
+                                                subjectName,
+                                                level,
+                                                dateKey
                                             )
                                             // ✅ 핵심
                                             studentViewModel.markStudentUpdated(student.id)
@@ -248,7 +251,7 @@ fun HomeworkScreen(
                             modifier = Modifier.weight(1f),
                             onClick = {
                                 selectedStudentForMemo = student.id
-                                memoText = student.memo ?: ""
+                                memoText = student.memoMap[subjectName]?.get(dateKey) ?: ""
                                 showMemoDialog = true
                             }
                         ) {
@@ -334,9 +337,14 @@ fun HomeworkScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(onClick = {
                             val student = studentList.first { it.id == selectedStudentForMemo }
+                            val subjectName = selectedSubject?.name ?: return@Button
+                            val dateKey = selectedDateString
 
-                            studentViewModel.updateStudent(
-                                student.copy(memo = memoText)
+                            studentViewModel.saveHomeworkMemo(
+                                student.id,
+                                subjectName,
+                                memoText,
+                                dateKey
                             )
 
                             showMemoDialog = false

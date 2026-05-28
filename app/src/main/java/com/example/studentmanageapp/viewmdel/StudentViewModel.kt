@@ -11,13 +11,19 @@ import com.example.studentmanageapp.data.entity.Student
 import com.example.studentmanageapp.data.repository.StudentRepository
 import com.example.studentmanageapp.model.AttendanceRecord
 import com.example.studentmanageapp.model.AttendanceStatus
+import com.example.studentmanageapp.network.ActivityRequest
+import com.example.studentmanageapp.network.AttendanceRequest
+import com.example.studentmanageapp.network.AttendanceResponse
+import com.example.studentmanageapp.network.HomeworkRequest
 import com.example.studentmanageapp.network.RetrofitClient
+import com.example.studentmanageapp.network.ScoreRequest
+import com.example.studentmanageapp.network.StudentRequest
+import com.example.studentmanageapp.network.StudentResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
-
 
 class StudentViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -25,64 +31,83 @@ class StudentViewModel(application: Application) : AndroidViewModel(application)
     private val studentRepository = StudentRepository(db.studentDao(), db.attendanceDao())
     private val attendanceDao = db.attendanceDao()
 
-    // ✅ 학생 리스트를 StateFlow로 관리
     private val _studentList = MutableStateFlow<List<Student>>(emptyList())
     val studentList: StateFlow<List<Student>> = _studentList
 
+    private val _serverStudents = MutableStateFlow<List<StudentResponse>>(emptyList())
+    val serverStudents: StateFlow<List<StudentResponse>> = _serverStudents
+
+    private val _serverMessage = MutableStateFlow("Server not called yet")
+    val serverMessage: StateFlow<String> = _serverMessage
+
     init {
-        loadStudents()
+        loadStudentsFromServer()
     }
 
-    // ✅ 학생 전체 불러오기
     fun loadStudents() = viewModelScope.launch {
         val students = studentRepository.getAllStudents()
         _studentList.value = students
     }
 
-    // ✅ 학생 추가 후 갱신
     fun addStudent(student: Student) = viewModelScope.launch {
-        studentRepository.addStudent(student)
-        loadStudents()
-    }
-
-    // ✅ 학생 수정 후 갱신
-    fun updateStudent(student: Student) = viewModelScope.launch {
-        studentRepository.updateStudent(student)
-
-        // ✅ 기존 리스트에서 해당 학생만 교체
-        val currentList = _studentList.value.toMutableList()
-        val index = currentList.indexOfFirst { it.id == student.id }
-        if (index != -1) {
-            currentList[index] = student
-            _studentList.value = currentList // ✅ Compose가 변경을 감지함
+        try {
+            RetrofitClient.studentApi.addStudent(student.toRequest())
+            loadStudentsFromServer()
+        } catch (e: Exception) {
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
         }
     }
 
-    // ✅ 학생 삭제 후 갱신
-    fun deleteStudent(student: Student) = viewModelScope.launch {
-        studentRepository.deleteStudent(student)
-        loadStudents()
+    fun updateStudent(student: Student) = viewModelScope.launch {
+        try {
+            RetrofitClient.studentApi.updateStudent(student.id, student.toRequest())
+            loadStudentsFromServer()
+        } catch (e: Exception) {
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+        }
     }
 
-    // ✅ 학생 + 출석 기록 삭제 후 갱신
+    fun deleteStudent(student: Student) = viewModelScope.launch {
+        try {
+            RetrofitClient.studentApi.deleteStudent(student.id)
+            loadStudentsFromServer()
+        } catch (e: Exception) {
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+        }
+    }
+
     fun deleteStudentWithAttendance(student: Student) = viewModelScope.launch {
         studentRepository.deleteStudentWithAttendance(student)
         loadStudents()
     }
 
-    // ✅ 출석 기록 저장
     fun saveAttendance(record: AttendanceRecord) = viewModelScope.launch {
-        attendanceDao.deleteRecord(record.studentId, record.date)
-        attendanceDao.insert(record)
+        try {
+            RetrofitClient.studentApi.saveAttendance(
+                AttendanceRequest(
+                    studentId = record.studentId,
+                    attendanceStatus = record.status.name,
+                    date = record.date.toString()
+                )
+            )
+        } catch (e: Exception) {
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+        }
     }
 
-    // ✅ 특정 날짜 출석 기록
     fun getAttendanceByDate(date: LocalDate, onResult: (List<AttendanceRecord>) -> Unit) = viewModelScope.launch {
-        val records = attendanceDao.getRecordsByDate(date)
-        onResult(records)
+        try {
+            val records = RetrofitClient.studentApi
+                .getAttendances(YearMonth.from(date).toString())
+                .filter { it.date == date.toString() }
+                .map { it.toAttendanceRecord() }
+            onResult(records)
+        } catch (e: Exception) {
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+            onResult(emptyList())
+        }
     }
 
-    // ✅ 전체 출석 기록 (삭제된 학생 제외)
     fun getAllAttendanceDates(onResult: (List<AttendanceRecord>) -> Unit) = viewModelScope.launch {
         val validStudentIds = studentRepository.getAllStudents().map { it.id }.toSet()
         val records = attendanceDao.getAllRecords()
@@ -90,7 +115,6 @@ class StudentViewModel(application: Application) : AndroidViewModel(application)
         onResult(filtered)
     }
 
-    // ✅ 월별 출석 통계
     fun getMonthlyAttendanceStats(
         yearMonth: YearMonth,
         onResult: (Map<Int, Map<AttendanceStatus, Int>>) -> Unit
@@ -107,8 +131,15 @@ class StudentViewModel(application: Application) : AndroidViewModel(application)
 
     fun getAttendanceByMonth(yearMonth: String, callback: (List<AttendanceRecord>) -> Unit) {
         viewModelScope.launch {
-            val records = attendanceDao.getRecordsByMonth(yearMonth)
-            callback(records)
+            try {
+                val records = RetrofitClient.studentApi
+                    .getAttendances(yearMonth)
+                    .map { it.toAttendanceRecord() }
+                callback(records)
+            } catch (e: Exception) {
+                _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+                callback(emptyList())
+            }
         }
     }
 
@@ -116,14 +147,25 @@ class StudentViewModel(application: Application) : AndroidViewModel(application)
         yearMonth: YearMonth,
         onResult: (List<AttendanceRecord>) -> Unit
     ) = viewModelScope.launch {
-        val records = attendanceDao.getRecordsByMonth(yearMonth.toString())
-        val filtered = records.filter { it.status != AttendanceStatus.PRESENT }
-        onResult(filtered)
+        try {
+            val records = RetrofitClient.studentApi
+                .getAttendances(yearMonth.toString())
+                .map { it.toAttendanceRecord() }
+            val filtered = records.filter { it.status != AttendanceStatus.PRESENT }
+            onResult(filtered)
+        } catch (e: Exception) {
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+            onResult(emptyList())
+        }
     }
 
     fun deleteAttendanceByDate(date: LocalDate, onDone: () -> Unit = {}) {
         viewModelScope.launch {
-            attendanceDao.deleteAttendanceByDate(date)
+            try {
+                RetrofitClient.studentApi.deleteAttendanceByDate(date.toString())
+            } catch (e: Exception) {
+                _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+            }
             onDone()
         }
     }
@@ -139,23 +181,156 @@ class StudentViewModel(application: Application) : AndroidViewModel(application)
         lastUpdatedStudentId = null
     }
 
-    private val _serverStudents = MutableStateFlow<List<String>>(emptyList())
-    val serverStudents: StateFlow<List<String>> = _serverStudents
-
-    private val _serverMessage = MutableStateFlow("Server not called yet")
-    val serverMessage: StateFlow<String> = _serverMessage
-
     fun loadStudentsFromServer() = viewModelScope.launch {
         _serverMessage.value = "Loading..."
 
         try {
             val students = RetrofitClient.studentApi.getStudents()
+            val praises = RetrofitClient.studentApi.getPraises()
+            val presentations = RetrofitClient.studentApi.getPresentations()
+            val homeworks = RetrofitClient.studentApi.getHomeworks()
+            val activities = RetrofitClient.studentApi.getActivities()
+
+            val praiseMap = praises.associateBy { it.studentId }
+            val presentationMap = presentations.associateBy { it.studentId }
+            val homeworkMap = homeworks
+                .groupBy { it.studentId }
+                .mapValues { (_, records) ->
+                    records
+                        .groupBy { it.homeworkName }
+                        .mapValues { (_, subjectRecords) ->
+                            subjectRecords.associate { it.date to (it.homeworkScore ?: "") }
+                        }
+                }
+            val homeworkMemoMap = homeworks
+                .groupBy { it.studentId }
+                .mapValues { (_, records) ->
+                    records
+                        .groupBy { it.homeworkName }
+                        .mapValues { (_, subjectRecords) ->
+                            subjectRecords.associate { it.date to (it.homeworkMemo ?: "") }
+                        }
+                }
+            val activityMap = activities
+                .groupBy { it.studentId }
+                .mapValues { (_, records) ->
+                    records.associate { "${it.activityName}-${it.date}" to it.activityScore }
+                }
+
             _serverStudents.value = students
+            _studentList.value = students.map { student ->
+                student.toStudent().copy(
+                    praiseScore = praiseMap[student.id]?.score ?: 0,
+                    presentationScore = presentationMap[student.id]?.score ?: 0,
+                    homeworkMap = homeworkMap[student.id] ?: emptyMap(),
+                    memoMap = homeworkMemoMap[student.id] ?: emptyMap(),
+                    activityMap = activityMap[student.id] ?: emptyMap()
+                )
+            }
             _serverMessage.value = "Success: ${students.size} students"
         } catch (e: Exception) {
             _serverStudents.value = emptyList()
+            loadStudents()
             _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
         }
     }
 
+    private fun StudentResponse.toStudent(): Student {
+        return Student(
+            id = id,
+            name = name,
+            gender = gender,
+            memo = memo ?: ""
+        )
+    }
+
+    private fun Student.toRequest(): StudentRequest {
+        return StudentRequest(
+            id = id,
+            name = name,
+            gender = gender,
+            memo = memo
+        )
+    }
+
+    private fun AttendanceResponse.toAttendanceRecord(): AttendanceRecord {
+        return AttendanceRecord(
+            studentId = studentId,
+            studentName = name,
+            date = LocalDate.parse(date),
+            status = AttendanceStatus.from(attendanceStatus)
+        )
+    }
+
+    fun savePraise(studentId: Int, scoreDelta: Int) = viewModelScope.launch {
+        try {
+            RetrofitClient.studentApi.savePraise(ScoreRequest(studentId, scoreDelta))
+            loadStudentsFromServer()
+        } catch (e: Exception) {
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+        }
+    }
+
+    fun savePresentation(studentId: Int, scoreDelta: Int) = viewModelScope.launch {
+        try {
+            RetrofitClient.studentApi.savePresentation(ScoreRequest(studentId, scoreDelta))
+            loadStudentsFromServer()
+        } catch (e: Exception) {
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+        }
+    }
+
+    fun saveHomework(studentId: Int, homeworkName: String, homeworkScore: String, date: String) =
+        viewModelScope.launch {
+            try {
+                RetrofitClient.studentApi.saveHomework(
+                    HomeworkRequest(
+                        studentId = studentId,
+                        homeworkName = homeworkName,
+                        homeworkScore = homeworkScore,
+                        date = date
+                    )
+                )
+                markStudentUpdated(studentId)
+                loadStudentsFromServer()
+            } catch (e: Exception) {
+                _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+            }
+        }
+
+    fun saveHomeworkMemo(studentId: Int, homeworkName: String, homeworkMemo: String, date: String) =
+        viewModelScope.launch {
+            try {
+                RetrofitClient.studentApi.saveHomework(
+                    HomeworkRequest(
+                        studentId = studentId,
+                        homeworkName = homeworkName,
+                        date = date,
+                        homeworkMemo = homeworkMemo
+                    )
+                )
+                markStudentUpdated(studentId)
+                loadStudentsFromServer()
+            } catch (e: Exception) {
+                _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+            }
+        }
+
+    fun saveActivity(studentId: Int, activityName: String, activityScore: String, date: String) =
+        viewModelScope.launch {
+            try {
+                RetrofitClient.studentApi.saveActivity(
+                    ActivityRequest(
+                        studentId = studentId,
+                        activityName = activityName,
+                        activityScore = activityScore,
+                        date = date
+                    )
+                )
+                markStudentUpdated(studentId)
+                loadStudentsFromServer()
+            } catch (e: Exception) {
+            _serverMessage.value = "Failed: ${e.message ?: e.javaClass.simpleName}"
+        }
+    }
 }
